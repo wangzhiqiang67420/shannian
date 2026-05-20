@@ -31,6 +31,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { apiUrl } from '../../utils/request'
 
 const histories = ref([])
 
@@ -46,7 +47,7 @@ async function loadHistories(noteId) {
   if (!token) return
   try {
     const res = await uni.request({
-      url: '/api/notes/histories?id=' + noteId,
+      url: apiUrl('/api/notes/histories?id=' + noteId),
       method: 'GET',
       header: { 'Authorization': 'Bearer ' + token }
     })

@@ -5,7 +5,7 @@
         <view class="header-mark" />
         <text class="header-title">闪念</text>
       </view>
-      <text v-if="phone" class="header-phone">{{ maskedPhone }}</text>
+      <text v-if="userLabel" class="header-phone">{{ userLabel }}</text>
     </view>
 
     <view
@@ -45,34 +45,41 @@
       <text class="empty-title">还没有笔记</text>
       <text class="empty-sub">去首页开始记录第一个想法吧</text>
     </view>
+
+    <view class="logout-wrap" v-if="token">
+      <view class="logout-btn" @click="handleLogout" hover-class="logout-btn--hover">
+        <text class="logout-text">退出登录</text>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import { apiUrl } from '../utils/request'
 
 const notes = ref([])
-const phone = ref('')
+const token = ref('')
+const userInfo = ref(null)
 const page = ref(1)
 const hasMore = ref(true)
 const loading = ref(false)
 
-const maskedPhone = computed(() => {
-  const p = phone.value
-  if (!p || p.length !== 11) return p
-  return p.slice(0, 3) + '****' + p.slice(7)
+const userLabel = computed(() => {
+  const openid = userInfo.value?.openid
+  if (!openid) return ''
+  return `微信用户 ${openid.slice(-6)}`
 })
 
 onShow(() => {
   page.value = 1
   notes.value = []
   hasMore.value = true
-  const token = uni.getStorageSync('token')
-  const userInfo = uni.getStorageSync('userInfo')
-  if (token) {
-    phone.value = userInfo?.phone || ''
-    loadNotes(token)
+  token.value = uni.getStorageSync('token')
+  userInfo.value = uni.getStorageSync('userInfo') || null
+  if (token.value) {
+    loadNotes(token.value)
   }
 })
 
@@ -80,7 +87,7 @@ async function loadNotes(token) {
   loading.value = true
   try {
     const res = await uni.request({
-      url: `/api/notes/list?page=${page.value}&size=5`,
+      url: apiUrl(`/api/notes/list?page=${page.value}&size=5`),
       method: 'GET',
       header: { 'Authorization': 'Bearer ' + token }
     })
@@ -101,7 +108,7 @@ async function loadMore() {
   const token = uni.getStorageSync('token')
   try {
     const res = await uni.request({
-      url: `/api/notes/list?page=${page.value}&size=5`,
+      url: apiUrl(`/api/notes/list?page=${page.value}&size=5`),
       method: 'GET',
       header: { 'Authorization': 'Bearer ' + token }
     })
@@ -117,6 +124,15 @@ async function loadMore() {
 
 function goDetail(id) {
   uni.navigateTo({ url: '/pages/note/detail?id=' + id })
+}
+
+function handleLogout() {
+  uni.removeStorageSync('token')
+  uni.removeStorageSync('userInfo')
+  notes.value = []
+  token.value = ''
+  userInfo.value = null
+  uni.reLaunch({ url: '/pages/login' })
 }
 
 function truncate(text) {
@@ -292,5 +308,30 @@ function formatTime(time) {
 .empty-sub {
   font-size: 13px;
   color: #c4b8a8;
+}
+
+.logout-wrap {
+  padding: 12px 20px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  background: #faf6f0;
+}
+
+.logout-btn {
+  height: 42px;
+  border: 1px solid #d4a998;
+  border-radius: 21px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logout-btn--hover {
+  background: #fff3ed;
+}
+
+.logout-text {
+  font-size: 14px;
+  color: #b85c4a;
+  letter-spacing: 2px;
 }
 </style>

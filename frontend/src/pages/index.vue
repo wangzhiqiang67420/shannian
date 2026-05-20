@@ -1,5 +1,9 @@
 <template>
   <view class="page">
+    <view class="login-link" v-if="!isLoggedIn" @click="goLogin">
+      <text class="login-link-text">登录</text>
+    </view>
+
     <view class="lights">
       <view class="light" v-for="i in 10" :key="i"
         :style="{
@@ -23,11 +27,12 @@
           <view class="btn-face">
             <text class="btn-icon">+</text>
           </view>
-          <text class="btn-label">记一笔</text>
+          <text class="btn-label">{{ isLoggedIn ? '记一笔' : '登录后记录' }}</text>
         </view>
       </view>
 
-      <text class="count-text" v-if="noteCount > 0">已留下 {{ noteCount }} 个念头</text>
+      <text class="count-text" v-if="!isLoggedIn">登录后开始记录你的念头</text>
+      <text class="count-text" v-else-if="noteCount > 0">已留下 {{ noteCount }} 个念头</text>
       <text class="count-text" v-else>开始记录你的第一个念头</text>
 
       <view class="spacer" />
@@ -37,6 +42,8 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import { apiUrl } from '../utils/request'
 
 const quotes = [
   '念头像萤火，一闪而过',
@@ -50,6 +57,7 @@ const quoteKey = ref(0)
 let quoteTimer = null
 const todayText = ref('')
 const noteCount = ref(0)
+const isLoggedIn = ref(false)
 
 onMounted(() => {
   const now = new Date()
@@ -59,6 +67,11 @@ onMounted(() => {
     quoteIdx.value = (quoteIdx.value + 1) % quotes.length
     quoteKey.value++
   }, 6000)
+})
+
+onShow(() => {
+  isLoggedIn.value = !!uni.getStorageSync('token')
+  noteCount.value = 0
   loadCount()
 })
 
@@ -68,12 +81,27 @@ async function loadCount() {
   const token = uni.getStorageSync('token')
   if (!token) return
   try {
-    const res = await uni.request({ url: '/api/notes/list', method: 'GET', header: { 'Authorization': 'Bearer ' + token } })
-    if (res.data.success && Array.isArray(res.data.data)) noteCount.value = res.data.data.length
+    const res = await uni.request({ url: apiUrl('/api/notes/list'), method: 'GET', header: { 'Authorization': 'Bearer ' + token } })
+    if (!res.data.success) return
+    if (Array.isArray(res.data.data)) {
+      noteCount.value = res.data.data.length
+    } else {
+      noteCount.value = Number(res.data.data?.total || 0)
+    }
   } catch (e) { /* silent */ }
 }
 
-function goEdit() { uni.navigateTo({ url: '/pages/note/edit' }) }
+function goEdit() {
+  if (!isLoggedIn.value) {
+    goLogin()
+    return
+  }
+  uni.navigateTo({ url: '/pages/note/edit' })
+}
+
+function goLogin() {
+  uni.navigateTo({ url: '/pages/login' })
+}
 </script>
 
 <style scoped>
@@ -88,6 +116,27 @@ function goEdit() { uni.navigateTo({ url: '/pages/note/edit' }) }
 }
 
 .lights { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+
+.login-link {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  z-index: 5;
+  min-width: 58px;
+  height: 32px;
+  border: 1px solid #d6c4a8;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 254, 251, 0.78);
+}
+
+.login-link-text {
+  font-size: 13px;
+  color: #8c6a47;
+  letter-spacing: 2px;
+}
 
 .light {
   position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #d4a854;

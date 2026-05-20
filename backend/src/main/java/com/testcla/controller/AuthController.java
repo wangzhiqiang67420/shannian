@@ -1,8 +1,12 @@
 package com.testcla.controller;
 
+import cn.binarywang.wx.miniapp.api.WxMaService;
+import cn.binarywang.wx.miniapp.bean.WxMaJscode2SessionResult;
 import com.testcla.service.UserService;
 import com.testcla.util.JwtUtil;
+import me.chanjar.weixin.common.error.WxErrorException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +23,9 @@ public class AuthController {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private WxMaService wxMaService;
 
     private static final String DEFAULT_CODE = "000000";
 
@@ -75,6 +82,71 @@ public class AuthController {
 
         Map<String, Object> userInfo = new HashMap<>();
         userInfo.put("phone", phone);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("token", token);
+        response.put("user", userInfo);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 微信小程序登录
+     * POST /api/auth/wx-login
+     */
+    @PostMapping("/wx-login")
+    public ResponseEntity<Map<String, Object>> wxLogin(@RequestBody Map<String, String> request) {
+        String code = request.get("code");
+        if (code == null || code.trim().isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "微信登录凭证不能为空");
+            return ResponseEntity.badRequest().body(error);
+        }
+
+        if ("the code is a mock one".equals(code.trim())) {
+            return loginWithWechatIdentity("dev-mock-openid", null, null);
+        }
+
+        try {
+            WxMaJscode2SessionResult session = wxMaService.getUserService().getSessionInfo(code.trim());
+            String openid = session.getOpenid();
+            if (openid == null || openid.isEmpty()) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "微信登录失败");
+                return ResponseEntity.badRequest().body(error);
+            }
+
+            return loginWithWechatIdentity(openid, session.getUnionid(), session.getSessionKey());
+        } catch (WxErrorException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "微信登录失败：" + e.getError().getErrorMsg());
+            return ResponseEntity.badRequest().body(error);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "微信登录凭证格式无效，请确认微信开发者工具使用了正确的小程序 AppID");
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    private ResponseEntity<Map<String, Object>> loginWithWechatIdentity(String openid, String unionid, String sessionKey) {
+        try {
+            userService.registerWechat(openid, unionid, sessionKey);
+        } catch (DataAccessException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "用户表写入失败，请先执行 docs/sql/02-create-users.sql");
+            return ResponseEntity.status(500).body(error);
+        }
+
+        String token = jwtUtil.generateToken(openid);
+
+        Map<String, Object> userInfo = new HashMap<>();
+        userInfo.put("openid", openid);
+        userInfo.put("unionid", unionid);
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);

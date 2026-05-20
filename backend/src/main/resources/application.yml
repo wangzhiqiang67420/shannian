@@ -14,3 +14,8 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: auto
+
+wx:
+  miniapp:
+    app-id: wx20b981a89d5abd53
+    secret: 0c1f261cdec2731438094453ca2fde54

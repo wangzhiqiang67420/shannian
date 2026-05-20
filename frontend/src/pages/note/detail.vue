@@ -8,14 +8,18 @@
       </view>
     </view>
 
-    <textarea
-      class="editor"
-      :value="content"
-      placeholder="加载中..."
-      placeholder-style="color:#c4b8a8;font-size:16px"
-      @input="content = $event.detail.value"
-      auto-height
-    />
+    <view class="editor-wrap">
+      <textarea
+        class="editor"
+        :value="content"
+        placeholder="加载中..."
+        placeholder-style="color:#c4b8a8;font-size:16px"
+        maxlength="-1"
+        cursor-spacing="24"
+        :show-confirm-bar="false"
+        @input="handleContentInput"
+      ></textarea>
+    </view>
 
     <view class="actions">
       <view
@@ -41,6 +45,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { apiUrl } from '../../utils/request'
 
 const note = ref(null)
 const content = ref('')
@@ -54,12 +59,16 @@ onMounted(() => {
   if (id) loadDetail(id)
 })
 
+function handleContentInput(event) {
+  content.value = event.detail?.value || ''
+}
+
 async function loadDetail(id) {
   const token = uni.getStorageSync('token')
   if (!token) return
   try {
     const res = await uni.request({
-      url: '/api/notes/detail?id=' + id,
+      url: apiUrl('/api/notes/detail?id=' + id),
       method: 'GET',
       header: { 'Authorization': 'Bearer ' + token }
     })
@@ -76,7 +85,7 @@ async function handleUpdate() {
   const token = uni.getStorageSync('token')
   try {
     const res = await uni.request({
-      url: '/api/notes/update',
+      url: apiUrl('/api/notes/update'),
       method: 'POST',
       header: { 'Authorization': 'Bearer ' + token },
       data: { id: note.value.id, content: content.value.trim() }
@@ -101,7 +110,7 @@ async function handleDelete() {
         const token = uni.getStorageSync('token')
         try {
           const r = await uni.request({
-            url: '/api/notes/delete',
+            url: apiUrl('/api/notes/delete'),
             method: 'POST',
             header: { 'Authorization': 'Bearer ' + token },
             data: { id: note.value.id }
@@ -165,16 +174,23 @@ function formatTime(time) {
   display: block;
 }
 
-.editor {
+.editor-wrap {
   flex: 1;
+  min-height: 0;
   padding: 22px 20px;
+  box-sizing: border-box;
+}
+
+.editor {
+  width: 100%;
+  height: 100%;
   font-size: 17px;
   line-height: 1.8;
   color: #3d3226;
   background: transparent;
   border: none;
   font-family: Georgia, "Times New Roman", serif;
-  min-height: 0;
+  box-sizing: border-box;
 }
 
 .actions {

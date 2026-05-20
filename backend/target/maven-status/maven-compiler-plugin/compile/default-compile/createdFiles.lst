@@ -1,2 +1,4 @@
 com\testcla\controller\PingController.class
 com\testcla\TestclaApplication.class
+com\testcla\config\WxMaConfig.class
+com\testcla\config\WxMaProperties.class

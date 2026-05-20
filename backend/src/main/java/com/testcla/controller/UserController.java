@@ -26,10 +26,10 @@ public class UserController {
             error.put("message", "未提供认证令牌");
             return ResponseEntity.status(401).body(error);
         }
-        String phone = jwtUtil.getPhoneFromToken(authHeader.substring(7));
+        String openid = jwtUtil.getPhoneFromToken(authHeader.substring(7));
 
         Map<String, Object> userInfo = new HashMap<>();
-        userInfo.put("phone", phone);
+        userInfo.put("openid", openid);
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);

@@ -7,15 +7,19 @@
       </view>
     </view>
 
-    <textarea
-      class="editor"
-      :value="content"
-      placeholder="此刻在想什么..."
-      placeholder-style="color:#c4b8a8;font-size:16px;font-family:Georgia,serif"
-      @input="content = $event.detail.value"
-      focus
-      auto-height
-    />
+    <view class="editor-wrap">
+      <textarea
+        v-if="editorReady"
+        class="editor"
+        :value="content"
+        placeholder="此刻在想什么..."
+        placeholder-style="color:#c4b8a8;font-size:16px"
+        maxlength="-1"
+        fixed
+        cursor-spacing="80"
+        @input="handleContentInput"
+      ></textarea>
+    </view>
 
     <!-- Location bar -->
     <view class="location-bar">
@@ -46,8 +50,10 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { apiUrl } from '../../utils/request'
 
 const content = ref('')
+const editorReady = ref(true)
 const timeDisplay = ref('')
 const includeLoc = ref(true)
 const address = ref('')
@@ -71,6 +77,10 @@ onMounted(() => { loadLocation() })
 onUnmounted(() => {
   if (timer) clearInterval(timer)
 })
+
+function handleContentInput(event) {
+  content.value = event.detail?.value || ''
+}
 
 async function loadLocation() {
   locStatus.value = 'loading'
@@ -99,7 +109,7 @@ async function loadLocation() {
     longitude = locRes.longitude
 
     const geoRes = await uni.request({
-      url: `/api/notes/geocode?lat=${latitude}&lng=${longitude}`,
+      url: apiUrl(`/api/notes/geocode?lat=${latitude}&lng=${longitude}`),
       method: 'GET',
       header: { 'Authorization': 'Bearer ' + token }
     })
@@ -139,7 +149,7 @@ async function handleSave() {
 
   try {
     const res = await uni.request({
-      url: '/api/notes/add',
+      url: apiUrl('/api/notes/add'),
       method: 'POST',
       header: { 'Authorization': 'Bearer ' + token },
       data: saveData
@@ -189,16 +199,23 @@ async function handleSave() {
   letter-spacing: 1px;
 }
 
-.editor {
+.editor-wrap {
   flex: 1;
+  min-height: 0;
   padding: 22px 20px;
+  box-sizing: border-box;
+}
+
+.editor {
+  width: 100%;
+  height: 100%;
   font-size: 17px;
   line-height: 1.8;
   color: #3d3226;
   background: transparent;
   border: none;
   font-family: Georgia, "Times New Roman", serif;
-  min-height: 0;
+  box-sizing: border-box;
 }
 
 /* ── Location bar ── */
