@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm view *)",
+      "Bash(npm search *)",
+      "Bash(npx --yes @vue/cli create -p dcloudio/uni-preset-vue#vue3 test-uni --no-git)",
+      "Bash(npx create-uni *)",
+      "Bash(rm -rf \"D:/testcla/frontend\")",
+      "Bash(mv \"D:/testcla/test-uni\" \"D:/testcla/frontend\")",
+      "Bash(npm install *)",
+      "Bash(curl -s http://localhost:8080/api/ping)",
+      "Bash(npm run *)",
+      "Bash(curl *)",
+      "Bash(mvn compile *)",
+      "Bash(netstat -ano)",
+      "Bash(kill 25752)",
+      "Bash(taskkill /F /PID 25752)",
+      "Bash(mvn spring-boot:run -q)",
+      "Bash(awk '{print $5}')",
+      "Bash(taskkill //F //PID 66228)",
+      "Bash(tee /dev/stderr)",
+      "Bash(taskkill //F //PID 37148)",
+      "Bash(taskkill //F //PID 76416、)",
+      "Bash(mysql --version)",
+      "Bash(docker --version)",
+      "Bash(ping -n 1 -w 3000 172.168.8.101)",
+      "Bash(taskkill //F //PID 79264)",
+      "Bash(mvn spring-boot:run)",
+      "Bash(taskkill //F //PID 77452)",
+      "Bash(taskkill //F //PID 77276)",
+      "Bash(taskkill //F //PID 53336)",
+      "Bash(taskkill //F //PID 82464)",
+      "Bash(taskkill //F //PID 81620)",
+      "Bash(taskkill //F //PID 66964)",
+      "Bash(mysql *)",
+      "Bash(taskkill //F //PID 38156)"
+    ]
+  }
+}
